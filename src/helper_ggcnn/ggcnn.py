@@ -6,18 +6,20 @@ import scipy.ndimage as ndimage
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from keras.backend import set_session
+# from tensorflow.keras.backend import set_session
 
 
 MODEL_FILE = 'models/epoch_29_model.hdf5'
-sess = tf.Session()
+# sess = tf.Session()
+sess = tf.compat.v1.Session()
 set_session(sess)
-graph = tf.get_default_graph()
-model = load_model(path.join(path.dirname(__file__), MODEL_FILE))
+# graph = tf.get_default_graph()
+graph = tf.compat.v1.get_default_graph()
+# model = load_model(path.join(path.dirname(__file__), MODEL_FILE))
 
 
 def process_depth_mask(mask, crop_size, out_size=300, crop_y_offset=0):
     imh, imw = mask.shape
-
     # Crop.
     mask_crop = mask[(imh - crop_size) // 2 - crop_y_offset:(imh - crop_size) // 2 + crop_size - crop_y_offset,
                      (imw - crop_size) // 2:(imw - crop_size) // 2 + crop_size]
@@ -30,6 +32,8 @@ def process_depth_mask(mask, crop_size, out_size=300, crop_y_offset=0):
 
 def process_depth_image(depth, crop_size, out_size=300, crop_y_offset=0):
     imh, imw = depth.shape
+    # print((imh - crop_size) // 2 - crop_y_offset,(imh - crop_size) // 2 + crop_size - crop_y_offset)
+    # print((imw - crop_size) // 2,(imw - crop_size) // 2 + crop_size)
 
     # Crop.
     depth_crop = depth[(imh - crop_size) // 2 - crop_y_offset:(imh - crop_size) // 2 + crop_size - crop_y_offset,
@@ -39,7 +43,6 @@ def process_depth_image(depth, crop_size, out_size=300, crop_y_offset=0):
     depth_crop = cv2.copyMakeBorder(depth_crop, 1, 1, 1, 1, cv2.BORDER_DEFAULT)
     depth_nan_mask = np.isnan(depth_crop).astype(np.uint8)
     depth_crop[depth_nan_mask==1] = 0
-
     # Scale to keep as float, but has to be in bounds -1:1 to keep opencv happy.
     depth_scale = np.abs(depth_crop).max()
     depth_crop = depth_crop.astype(np.float32) / depth_scale  # Has to be float32, 64 not supported.
@@ -59,6 +62,7 @@ def predict(depth, mask=None, crop_size=300, out_size=300, crop_y_offset=0, filt
     depth = np.clip((depth - depth.mean()), -1, 1)
     set_session(sess)
     with graph.as_default():
+        model = load_model(path.join(path.dirname(__file__), MODEL_FILE))
         pred_out = model.predict(depth.reshape((1, 300, 300, 1)))
 
     points_out = pred_out[0].squeeze()
