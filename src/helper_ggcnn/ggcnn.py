@@ -5,7 +5,7 @@ import scipy.ndimage as ndimage
 
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from tensorflow.keras.backend import set_session
+from keras.backend import set_session
 
 
 MODEL_FILE = 'models/epoch_29_model.hdf5'
